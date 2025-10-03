@@ -2,13 +2,19 @@ package com.example.walletwave;
 
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
-import android.util.Log;
+import android.net.Uri;
+import android.os.Environment;
+import android.widget.Toast;
 
 import androidx.annotation.Nullable;
+import androidx.core.content.FileProvider;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.util.ArrayList;
 
 public class DBHelper extends SQLiteOpenHelper {
@@ -34,18 +40,17 @@ public class DBHelper extends SQLiteOpenHelper {
                 "category TEXT, " +          // e.g. Food, Travel, Rent
                 "paymentMethod TEXT, " +     // e.g. Cash, UPI, Card
                 "note TEXT, " +              // optional user notes
-                "balance TEXT NOT NULL" + // <--- last field, no comma needed
+                "balance TEXT NOT NULL" +    // current balance
                 ");");
-
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        // Drop and recreate the table if DB version changes
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_TRANSACTIONS);
         onCreate(db);
     }
 
+    // Insert Data
     public boolean insertData(String date, String time, String amount, String reason, String type,
                               String category, String payMethod, String note, String balance) {
         SQLiteDatabase db = this.getWritableDatabase();
@@ -62,10 +67,76 @@ public class DBHelper extends SQLiteOpenHelper {
         values.put("balance", balance);
 
         long result = db.insert(TABLE_TRANSACTIONS, null, values);
-        return result != -1;  // if insert is successful, result is the row id (>0), else -1
+        db.close();
+        return result != -1;
+    }
+
+    //  Export to CSV (Fixed)
+    public void exportToCSV(Context context) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery("SELECT * FROM " + TABLE_TRANSACTIONS, null);
+
+        if (cursor.getCount() == 0) {
+            Toast.makeText(context, "No transactions to export", Toast.LENGTH_SHORT).show();
+            cursor.close();
+            return;
+        }
+
+        // Create CSV header
+        StringBuilder csvData = new StringBuilder();
+        csvData.append("ID,Date,Time,Amount,Reason,Type,Category,PaymentMethod,Note,Balance\n");
+
+        // Write rows
+        while (cursor.moveToNext()) {
+            csvData.append(cursor.getInt(cursor.getColumnIndexOrThrow("id"))).append(",");
+            csvData.append(cursor.getString(cursor.getColumnIndexOrThrow("date"))).append(",");
+            csvData.append(cursor.getString(cursor.getColumnIndexOrThrow("time"))).append(",");
+            csvData.append(cursor.getString(cursor.getColumnIndexOrThrow("amount"))).append(",");
+            csvData.append(cursor.getString(cursor.getColumnIndexOrThrow("reason"))).append(",");
+            csvData.append(cursor.getString(cursor.getColumnIndexOrThrow("type"))).append(",");
+            csvData.append(cursor.getString(cursor.getColumnIndexOrThrow("category"))).append(",");
+            csvData.append(cursor.getString(cursor.getColumnIndexOrThrow("paymentMethod"))).append(",");
+            csvData.append(cursor.getString(cursor.getColumnIndexOrThrow("note"))).append(",");
+            csvData.append(cursor.getString(cursor.getColumnIndexOrThrow("balance"))).append("\n");
+        }
+
+        cursor.close();
+        db.close();
+
+        try {
+            // Save CSV file to Downloads folder
+            File path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+            if (!path.exists()) {
+                path.mkdirs();
+            }
+
+            File file = new File(path, "transactions.csv");
+            FileOutputStream fos = new FileOutputStream(file);
+            fos.write(csvData.toString().getBytes());
+            fos.close();
+
+            Toast.makeText(context, "CSV saved to Downloads", Toast.LENGTH_LONG).show();
+
+            // FileProvider setup (for Android 11+)
+            Uri fileUri = FileProvider.getUriForFile(
+                    context,
+                    context.getPackageName() + ".provider",
+                    file
+            );
+
+            Intent intent = new Intent(Intent.ACTION_VIEW);
+            intent.setDataAndType(fileUri, "text/csv");
+            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            context.startActivity(Intent.createChooser(intent, "Open CSV File"));
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            Toast.makeText(context, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
     }
 
 
+    // Calculate Expense Total
     public String getBalance() {
         double totalExpense = 0.0;
         SQLiteDatabase db = this.getReadableDatabase();
@@ -75,50 +146,40 @@ public class DBHelper extends SQLiteOpenHelper {
         );
 
         if (cursor.moveToFirst()) {
-            totalExpense = cursor.getDouble(0); // This is now the SUM value
+            totalExpense = cursor.getDouble(0);
         }
 
         cursor.close();
+        db.close();
 
-        // Return only the number string (no ₹, no label)
         return String.format("%.2f", totalExpense);
     }
 
-
-
-
+    // Fetch all records
     public ArrayList<DataModel> fetch() {
         SQLiteDatabase db = this.getReadableDatabase();
         ArrayList<DataModel> result = new ArrayList<>();
-        Cursor cur = null;
+        Cursor cur = db.rawQuery("SELECT * FROM " + TABLE_TRANSACTIONS, null);
 
-        try {
-            cur = db.rawQuery("SELECT * FROM " + TABLE_TRANSACTIONS, null);
-
-            if (cur != null && cur.moveToFirst()) {
-                do {
-                    DataModel d = new DataModel();
-                    d.id = cur.getString(cur.getColumnIndexOrThrow("id"));
-                    d.date = cur.getString(cur.getColumnIndexOrThrow("date"));
-                    d.time = cur.getString(cur.getColumnIndexOrThrow("time"));
-                    d.amount = cur.getString(cur.getColumnIndexOrThrow("amount"));
-                    d.reason = cur.getString(cur.getColumnIndexOrThrow("reason"));
-                    d.type = cur.getString(cur.getColumnIndexOrThrow("type"));
-                    d.category = cur.getString(cur.getColumnIndexOrThrow("category"));
-                    d.paymentMethod = cur.getString(cur.getColumnIndexOrThrow("paymentMethod"));
-                    d.note = cur.getString(cur.getColumnIndexOrThrow("note"));
-                    d.balance = cur.getString(cur.getColumnIndexOrThrow("balance"));
-                    result.add(d);
-                } while (cur.moveToNext());
-            }
-        } finally {
-            if (cur != null) {
-                cur.close();
-            }
-            db.close();
+        if (cur != null && cur.moveToFirst()) {
+            do {
+                DataModel d = new DataModel();
+                d.id = cur.getString(cur.getColumnIndexOrThrow("id"));
+                d.date = cur.getString(cur.getColumnIndexOrThrow("date"));
+                d.time = cur.getString(cur.getColumnIndexOrThrow("time"));
+                d.amount = cur.getString(cur.getColumnIndexOrThrow("amount"));
+                d.reason = cur.getString(cur.getColumnIndexOrThrow("reason"));
+                d.type = cur.getString(cur.getColumnIndexOrThrow("type"));
+                d.category = cur.getString(cur.getColumnIndexOrThrow("category"));
+                d.paymentMethod = cur.getString(cur.getColumnIndexOrThrow("paymentMethod"));
+                d.note = cur.getString(cur.getColumnIndexOrThrow("note"));
+                d.balance = cur.getString(cur.getColumnIndexOrThrow("balance"));
+                result.add(d);
+            } while (cur.moveToNext());
         }
 
+        cur.close();
+        db.close();
         return result;
     }
-
 }

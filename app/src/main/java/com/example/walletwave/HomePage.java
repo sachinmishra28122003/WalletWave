@@ -40,7 +40,6 @@ public class HomePage extends AppCompatActivity {
         tvIncome = findViewById(R.id.tvIncome);
         tvName = findViewById(R.id.tvGreeting);
 
-
         db = new DBHelper(this);
         auth = FirebaseAuth.getInstance();
         FirebaseDatabase database = FirebaseDatabase.getInstance();
@@ -67,7 +66,7 @@ public class HomePage extends AppCompatActivity {
             Intent i = new Intent(HomePage.this, TransactionHistory.class);
             startActivity(i);
         });
-    }
+        }
 
     private void loadUserData() {
         String uid = auth.getCurrentUser().getUid();
