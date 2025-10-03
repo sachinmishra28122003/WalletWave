@@ -1,0 +1,22 @@
+<resources>
+    <string name="app_name">WalletWave</string>
+    <string-array name="category_items">
+        <item>Food</item>
+        <item>Travel</item>
+        <item>Rent</item>
+        <item>Shopping</item>
+        <item>Salary</item>
+    </string-array>
+
+    <string-array name="type_items">
+        <item>Income</item>
+        <item>Expense</item>
+    </string-array>
+
+    <string-array name="payment_methods">
+        <item>Cash</item>
+        <item>UPI</item>
+        <item>Card</item>
+        <item>Bank Transfer</item>
+    </string-array>
+</resources>

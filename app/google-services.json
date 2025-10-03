@@ -1,0 +1,67 @@
+{
+  "project_info": {
+    "project_number": "281655757067",
+    "project_id": "budgettraker-01",
+    "storage_bucket": "budgettraker-01.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:281655757067:android:7ce82ee77195c86501ba0e",
+        "android_client_info": {
+          "package_name": "com.example.budgettraker"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBRIxQfNR8b1ohcWgzCzK4ioGd-tClBEck"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:281655757067:android:b38ae2df80f1103201ba0e",
+        "android_client_info": {
+          "package_name": "com.example.bugetbuddy"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBRIxQfNR8b1ohcWgzCzK4ioGd-tClBEck"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:281655757067:android:ec382ad59389bd9901ba0e",
+        "android_client_info": {
+          "package_name": "com.example.walletwave"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBRIxQfNR8b1ohcWgzCzK4ioGd-tClBEck"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
